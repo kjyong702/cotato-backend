@@ -1,19 +1,23 @@
+import { Request, Response, NextFunction } from 'express';
 import bcrpyt from 'bcrypt'
-import User from '../models/users.js'
-import { signAccessToken, signRefreshToken, verifyJWT } from '../utils/jwt.js'
+import { PrismaClient } from '@prisma/client'
+import { signAccessToken, signRefreshToken, verifyJWT } from '../utils/jwt'
 
+const prisma = new PrismaClient()
 
 // 회원가입
-const signUp = async (req, res) => {
+const signUp = async (req : Request, res : Response) => {
     const { name, email } = req.body
-    const existingUser = await User.findOne({ email })
+    const existingUser = await prisma.user.findUnique({
+        where: { email },
+    })
     if(existingUser) {
         res.status(400).json({
             message: 'User already exists',
         })
     }
 
-    const password = await new Promise((resolve, reject) => {
+    const password : string = await new Promise((resolve, reject) => {
         bcrpyt.hash(req.body.password, 10, (err, hash) => {
             if(err) {
                 reject(err)
@@ -23,31 +27,34 @@ const signUp = async (req, res) => {
             }
         })
     })
-    const user = new User({
-        name,
-        email,
-        password,
+    const user = await prisma.user.create({
+        data: {
+            name,
+            email,
+            password,
+        }
     })
-    await user.save()
 
     res.status(201).json({ user })
 }
 
 // 로그인
-const login = async (req, res) => {
+const login = async (req : Request, res : Response) => {
     const { email } = req.body
-    const user = await User.findOne({ email })
+    const user = await prisma.user.findUnique({
+        where: { email },
+    })
     if(!user) {
         res.json({ message: 'No Such User Found'})
     }
 
-    const isPassword = await bcrpyt.compare(req.body.password, user.password)
+    const isPassword : boolean = await bcrpyt.compare(req.body.password, user!.password)
     if(!isPassword) {
         res.status(400).json({ message: 'Invalid Password' })
     }
 
     const payload = {
-        email: user.email,
+        email: user!.email,
     }
     const accessToken = await signAccessToken(payload)
     const refreshToken = await signRefreshToken(payload)
@@ -59,7 +66,7 @@ const login = async (req, res) => {
 }
 
 // 매 API요청마다 호출될 함수
-const verifyAccessToken = async (req, res, next) => {
+const verifyAccessToken = async (req : Request, res : Response, next : NextFunction) => {
     const { accessToken, email } = req.body
     if(!accessToken) {
         res.json({ message: 'No AccessToken' })
@@ -68,8 +75,11 @@ const verifyAccessToken = async (req, res, next) => {
       try {
         const decodeResult = await verifyJWT(accessToken)
         if(decodeResult) {
-          const user = await User.findOne({ email })
+          const user = await prisma.user.findUnique({
+            where: { email },
+          })
           if (user) { // accessToken 검증완료 -> req에 값을 세팅 후, next() 호출
+            // @ts-ignore
             req.user = user
             next()
           }
@@ -83,7 +93,7 @@ const verifyAccessToken = async (req, res, next) => {
 }
 
 // accessToken 재발급 요청시 호출될 함수
-const resignAccessToken = async(req, res) => { // accessToken 재발급 필요 -> refreshToken 검증
+const resignAccessToken = async(req : Request, res : Response) => { // accessToken 재발급 필요 -> refreshToken 검증
     const { refreshToken, email } = req.body
     if(!refreshToken) {
         res.json({ message: 'No RefreshToken'})

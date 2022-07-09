@@ -5,9 +5,9 @@ const app = express()
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 
-import mainRouter from './routers/main.js'
-import userRouter from './routers/user.js'
-import authRouter from './routers/auth.js'
+import mainRouter from './routers/main'
+import userRouter from './routers/user'
+import authRouter from './routers/auth'
 
 app.use('/', mainRouter)
 app.use('/user', userRouter)

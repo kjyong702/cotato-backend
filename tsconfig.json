@@ -10,6 +10,6 @@
     "strict": true,
     "esModuleInterop": true,
     "noImplicitAny": true,
-    "typeRoots": ["./node_modules/@types", "./src/customType"],
+    "typeRoots": ["./node_modules/@types", "./src/types"],
   }
 }

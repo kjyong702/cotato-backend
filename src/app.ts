@@ -1,13 +1,13 @@
 import express from 'express'
 
+import mainRouter from './routers/mainRouter'
+import userRouter from './routers/userRouter'
+import authRouter from './routers/authRouter'
+
 const app = express()
 
-app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
-
-import mainRouter from './routers/main'
-import userRouter from './routers/user'
-import authRouter from './routers/auth'
+app.use(express.urlencoded({ extended: false }))
 
 app.use('/', mainRouter)
 app.use('/user', userRouter)

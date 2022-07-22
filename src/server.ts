@@ -1,15 +1,15 @@
-import { Request, Response } from 'express';
-// import subdomain from 'subdomain'
 import app from './app'
-import api from './routers/auth'
+// import api from './routers/userRouter'
+// import subdomain from 'subdomain'
 
 const PORT = 5000
 
 // app.use(subdomain({ base : 'localhost', removeWWW : true }))
 // app.use('/subdomain/api/', api)
 
-const startServer = () => {
+const test = () => {
     console.log(`The server is listening at port ${PORT}`)
+    
 }
 
-app.listen(PORT, startServer)
+app.listen(PORT, test)

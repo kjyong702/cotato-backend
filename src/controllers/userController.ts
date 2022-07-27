@@ -23,7 +23,7 @@ const signUp = async (req: Request, res: Response) => {
         })
     }
 
-    const password: string = await bcrpyt.hash(req.body.password, 10)
+    const password = await bcrpyt.hash(req.body.password, 10)
     const user = await prisma.user.create({
         data: {
             name,
@@ -32,10 +32,12 @@ const signUp = async (req: Request, res: Response) => {
             phoneNum,
         }
     })
-    const accessToken: string = jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: '1h' })
+    const accessToken = jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: '1h' })
+    const refreshToken = jwt.sign({ userId: user.id}, SECRET_KEY, { expiresIn: '14d' })
 
     return res.status(200).json({
         accessToken,
+        refreshToken,
         user,
     })
 }
@@ -52,7 +54,8 @@ const login = async (req: Request, res: Response) => {
         })
     }
 
-    const isPassword: boolean = await bcrpyt.compare(req.body.password, user!.password);
+    const isPassword = await bcrpyt.compare(req.body.password, user.password)
+    console.log(req.body.password, user.password)
     if (!isPassword) {
         return res.status(400).json({
             message: 'Invalid Password'
@@ -68,7 +71,7 @@ const login = async (req: Request, res: Response) => {
     })
 }
 
-// 핸드폰 인증 필요?
+// 아이디 찾기
 const findId = async (req: Request, res: Response) => {
     const { phoneNum } = req.body
     const user = await prisma.user.findUnique({
@@ -87,11 +90,25 @@ const findId = async (req: Request, res: Response) => {
     })
 }
 
-// const findPassword = async(req: Request, res: Response) => {
-//     // 핸드폰(NCP SENS) or 이메일(nodemailer) 인증 과정 추가
+// 비밀번호 재설정
+// 보통 비밀번호 찾기는 아이디가 존재하는지 검증하고 전화번호 인증으로 넘어가는데 이 때 요청 순서가 어케되는지?
+// 먼저 해당 아이디의 유저가 존재하는지를 검사해주고 SMS인증하고 비밀번호를 send해줘야하는데 프론트에서 동시에 여러 요청이 되나?
+// 아니면 먼저 비밀번호를 프론트에 던져주고 SMS인증이 통과하면 프론트에서 화면에 표시? 값(비밀번호)을 프론트에서 저장해 둘 수 있나?
+const findPassword = async(req: Request, res: Response) => {
+    const { email } = req.body
+    const user = await prisma.user.findUnique({
+        where: { email },
+    })
+    if(!user) {
+        res.status(200).json({
+            message: 'No Such User Found'
+        })
+    }
 
-// }
 
+}
+
+// accessToken 재발급
 const resignAccessToken = async(req: Request, res: Response) => {
     const { email, refreshToken } = req.body
     if(!refreshToken) {

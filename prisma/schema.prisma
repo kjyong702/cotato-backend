@@ -14,7 +14,18 @@ model User {
   name      String
   email     String   @unique
   password  String
-  phoneNum  String  @unique
+  phoneNum  String   @unique
+  posts     Post[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Post {
+  id        Int       @id @default(autoincrement())
+  title     String
+  content   String
+  author    User      @relation(fields: [authorId], references: [id]) // fields: 외래키, references: 기본키(user.id)
+  authorId  Int // @unique라면 1:n 관계 불가능
+  createdAt DateTime  @default(now())
+  updateAt  DateTime  @updatedAt
 }
